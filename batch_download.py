@@ -12,13 +12,24 @@ from scipy.io import savemat
 encoding = 'utf-8'
 
 #relative file path for each patient
-lr_file_name = "rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii"
-lr_path = "/MNINonLinear/Results/rfMRI_REST1_LR/" + lr_file_name
-rl_file_name = "rfMRI_REST1_RL_Atlas_MSMAll_hp2000_clean.dtseries.nii"
-rl_path = "/MNINonLinear/Results/rfMRI_REST1_RL/" + rl_file_name
+lr_msmall = "rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii"
+rl_msmall = "rfMRI_REST1_RL_Atlas_MSMAll_hp2000_clean.dtseries.nii"
+
+lr_no_msmall = "rfMRI_REST1_LR_Atlas_hp2000_clean.dtseries.nii"
+rl_no_msmall = "rfMRI_REST1_RL_Atlas_hp2000_clean.dtseries.nii"
+
+lr_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_LR/" + lr_msmall
+rl_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_RL/" + rl_msmall
+
+lr_no_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_LR/" + lr_no_msmall
+rl_no_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_RL/" + rl_no_msmall
+
+#"HCP_1200/996782/MNINonLinear/Results/rfMRI_REST1_RL/rfMRI_REST1_RL_Atlas_hp2000_clean.dtseries.nii"
+
 
 atlas_file_pre  = "/MNINonLinear/fsaverage_LR32k/"
-atlas_file_post = ".aparc.a2009s.32k_fs_LR.dlabel.nii"
+detrieux_atlas_file_post = ".aparc.a2009s.32k_fs_LR.dlabel.nii"
+desikan_atlas_file_post = ".aparc.32k_fs_LR.dlabel.nii"
 
 #paths on aws machine
 path2HCP_1200 = "/hcp-openaccess/HCP_1200/"
@@ -39,19 +50,37 @@ def list_files(patient_id):
     files = []
     subject_dir = local_dir+"/"+patient_id
 
-    hcp_path = path2HCP_1200 + patient_id + lr_path
-    readable_name = "LR"
-    local_path = subject_dir + "/" + lr_file_name
+    #msall
+    hcp_path = path2HCP_1200 + patient_id + lr_msmall_hcp_rel_path
+    readable_name = "LR_msmall"
+    local_path = subject_dir + "/" + lr_msmall
     files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
 
-    hcp_path = path2HCP_1200 + patient_id + rl_path
-    readable_name = "RL"
-    local_path = subject_dir + "/" + rl_file_name
+    hcp_path = path2HCP_1200 + patient_id + rl_msmall_hcp_rel_path
+    readable_name = "RL_msmall"
+    local_path = subject_dir + "/" + rl_msmall
     files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
-    
-    hcp_path = path2HCP_1200 + patient_id + atlas_file_pre + patient_id + atlas_file_post 
-    readable_name = "aparc32k"
-    local_path = subject_dir + "/" + patient_id + atlas_file_post#[1:] #get rid of beginning '.'
+
+    #no msall
+    hcp_path = path2HCP_1200 + patient_id + lr_no_msmall_hcp_rel_path
+    readable_name = "LR_no_msmall"
+    local_path = subject_dir + "/" + lr_no_msmall
+    files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
+
+    hcp_path = path2HCP_1200 + patient_id + rl_no_msmall_hcp_rel_path
+    readable_name = "RL_no_msmall"
+    local_path = subject_dir + "/" + rl_no_msmall
+    files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
+
+
+    hcp_path = path2HCP_1200 + patient_id + atlas_file_pre + patient_id + detrieux_atlas_file_post
+    readable_name = "Destrieux_aparc32k"
+    local_path = subject_dir + "/" + patient_id + detrieux_atlas_file_post
+    files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
+
+    hcp_path = path2HCP_1200 + patient_id + atlas_file_pre + patient_id + desikan_atlas_file_post
+    readable_name = "Desikan_aparc32k"
+    local_path = subject_dir + "/" + patient_id + desikan_atlas_file_post
     files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
     
     return files
@@ -92,7 +121,7 @@ def download_files():
 
     subject_list = subject_list_HCP_1200()
     for idx, subject in enumerate(subject_list):
-        print(f"{idx}th subject: {subject}")
+        print(f"\n\n{idx}th subject: {subject}")
 
         #create directory with this subject if it does not exist:
         subject_dir = local_dir+"/"+subject
@@ -103,12 +132,17 @@ def download_files():
         start = time.time()
         for f in list_files(subject):
             #check if file already exists in directory
+            #if "no_msmall"  in f["readable_name"]:
+            #    input(f'no_small: {f["local_path"]} exist?: {os.path.isfile(f["local_path"])}')
+            #elif "msmall"  in f["readable_name"]:
+            #    input(f'msmall: {f["local_path"]} exist?: {os.path.isfile(f["local_path"])}')
+
             if os.path.isfile(f['local_path']):
-                print(f'{f["readable_name"]} already exists, skipping...')
+                print(f'\t{f["readable_name"]} already exists, skipping...')
                 continue
             
             #if file does not already exist in local directory, attempt to download it
-            print(f'downloading {f["readable_name"]} into {subject_dir}...',end='')
+            print(f'\tdownloading {f["readable_name"]} into {subject_dir}...',end='')
             args = ["aws s3 cp s3:/" + f["hcp_path"] + " " + subject_dir]
             completed_process = subprocess.run(args, capture_output=True, shell=True)
             
@@ -129,33 +163,57 @@ def download_files():
         end = time.time()
         print(f"Time for download: {(end-start):.1f}")
         
-        #Summary of missing thus far
-        for f in list_files(subject):
-            missing = len(patients_missing_file[f["readable_name"]])
-            print(f'Missing {f["readable_name"]}: {missing} |', end='')
+        #Summarize whats missing
+        lr_msmall_miss = patients_missing_file["LR_msmall"]
+        rl_msmall_miss = patients_missing_file["RL_msmall"]
+        both_msmall_miss = lr_msmall_miss.intersection(rl_msmall_miss)
+        lr_len, rl_len, both_len= len(lr_msmall_miss), len(rl_msmall_miss), len(both_msmall_miss)
+        print(f"MSMALL missing:    lr {lr_len} | rl {rl_len} | both {both_len}")
         
-        lr_missing = patients_missing_file["LR"]
-        rl_missing = patients_missing_file["RL"]
-        both = lr_missing.intersection(rl_missing)
-        print(f'Missing LR and RL: {len(both)}\n\n')
-        ##
+        lr_no_msmall_miss = patients_missing_file["LR_no_msmall"]
+        rl_no_msmall_miss = patients_missing_file["RL_no_msmall"]
+        both_no_msmall_miss = lr_no_msmall_miss.intersection(rl_no_msmall_miss)
+        lr_len,rl_len,both_len=len(lr_no_msmall_miss),len(rl_no_msmall_miss), len(both_no_msmall_miss)
+        print(f"NO_MSMALL missing: lr {lr_len} | rl {rl_len} | both {both_len}")
     
-    #Summary of missing thus far
-    for readable_file_name in patients_missing_file:
-        missing = len(patients_missing_file[readable_file_name])
-        print(f'Missing {readable_file_name}: {missing} |', end='')
-    
-    lr_missing = patients_missing_file["LR"]
-    rl_missing = patients_missing_file["RL"]
-    both = lr_missing.intersection(rl_missing)
-    print(f'Patients with LR Missing": \n\t {lr_missing}')
-    print(f'Patients with RL Missing": \n\t {rl_missing}')
-    print(f'Patients with BOHT LR and RL Missing": \n\t {both}')
 
-#save_subject_list_to_mat()
+    #End of Download Summary
+    print(f"======END OF DOWNLOAD=======")
+    print(f"Total Patients: {len(subject_list)}")
+    lr_msmall_miss, rl_msmall_miss = patients_missing_file["LR_msmall"],patients_missing_file["RL_msmall"]
+    both_msmall_miss = lr_msmall_miss.intersection(rl_msmall_miss)
+    lr_len, rl_len, both_len= len(lr_msmall_miss), len(rl_msmall_miss), len(both_msmall_miss)
+    print(f"MSMALL missing:    lr {lr_len} | rl {rl_len} | both {both_len}")
+    
+    lr_no_msmall_miss = patients_missing_file["LR_no_msmall"]
+    rl_no_msmall_miss = patients_missing_file["RL_no_msmall"]
+    both_no_msmall_miss = lr_no_msmall_miss.intersection(rl_no_msmall_miss)
+    lr_len,rl_len,both_len=len(lr_no_msmall_miss),len(rl_no_msmall_miss), len(both_no_msmall_miss)
+    print(f"NO_MSMALL missing: lr {lr_len} | rl {rl_len} | both {both_len}")
+    
+    print(f"DESIKAN missing: {len(patients_missing_file['Desikan_aparc32k'])}")
+    print(f"DESTRIE missing: {len(patients_missing_file['Destrieux_aparc32k'])}")
+    print(f"======END OF DOWNLOAD=======")
+    
+    print(f"List of patients with missing files")
+    print(f"MSMALL")
+    print(f"LR: \n{lr_msmall_miss}")
+    print(f"RL: \n{rl_msmall_miss}")
+    print(f"BOTH: \n{both_msmall_miss}")
+    
+    print(f"\nNO MSMALL")
+    print(f"LR: same as msmall lr? {lr_msmall==lr_no_small} \n{lr_msmall_miss}")
+    print(f"RL: same as msmall rl? {rl_msmall==rl_no_small} \n{rl_no_msmall_miss}")
+    print(f"BOTH: same as msmall both? {both_msmall_miss==both_no_msmall_miss} \n{both_no_msmall_miss}")
+    
+    print(f"\nDESIKAN missing: {patients_missing_file['Desikan_aparc32k']}")
+    print(f"DESTRIE missing: {patients_missing_file['Destrieux_aparc32k']}")
+
 
 #Begin download
 download_files()
+
+#save_subject_list_to_mat()
 
 #sl = subject_list_HCP_1200()
 #print(f"999th subject_id: {sl[997:1001]}")
