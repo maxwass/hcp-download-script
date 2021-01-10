@@ -1,0 +1,20 @@
+1) logon to hcp website and register to receive data: http://www.humanconnectomeproject.org/data/
+     -get Username, Access Key ID, and Secret Access Key ID
+ 
+2) installation
+    -install anaconda
+    -create new anaconda environment
+    -activate new anaconda environment
+    -install aws command line tools: conda install -c conda-forge awscli
+
+3) Configure AWS
+    - run: aws configure
+        -put in access key id, secret access key id, ‘us-east-1’, ‘text’
+ 
+4) Customizing batch_download script
+    - 3 places to change
+        1) header - variables for paths
+        2) files_to_download - list of dictionaries of files to download
+        3) end of download_files() loop/function - printing for each loop and final printing
+5) Directory structure
+    - batch_download.py assumes that there is a directory brain_data (specify path in header of script) that exists. Create if one does not exist. The script will create a directoy for each patient if one does not already exist (name of dir is patient_i)
