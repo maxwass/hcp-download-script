@@ -18,3 +18,13 @@
         3) end of download_files() loop/function - printing for each loop and final printing
 5) Directory structure
     - batch_download.py assumes that there is a directory brain_data (specify path in header of script) that exists. Create if one does not exist. The script will create a directoy for each patient if one does not already exist (name of dir is patient_i)
+
+
+
+
+
+=============
+To recursively search for files on aws:
+aws s3 ls --recursive hcp-openaccess/HCP_1200/ | grep ‘pattern-to-search’
+    -https://stackoverflow.com/questions/41179573/how-to-grep-into-files-stored-in-s3
+
