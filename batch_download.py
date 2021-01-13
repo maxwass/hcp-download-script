@@ -38,7 +38,7 @@ desikan_atlas_file_post = ".aparc.32k_fs_LR.dlabel.nii"
 path2HCP_1200 = "/hcp-openaccess/HCP_1200/"
 
 #paths on local machine
-external_hd_path = "/run/media/mwasser6/Elements"
+external_hd_path = "/Volumes/Elements" #"/run/media/mwasser6/Elements"
 log_file  = external_hd_path + "/download_scripts/log.txt"
 local_dir = external_hd_path + "/brain_data"
 
@@ -105,8 +105,6 @@ def list_files(patient_id):
     files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
 
     return files
-
-
 #create list of string subject id's in HCP_1200. There are 1114 directories (each representing a patient)
 def subject_list_HCP_1200():
     args = ["aws s3 ls s3://hcp-openaccess/HCP_1200/"]
@@ -116,9 +114,9 @@ def subject_list_HCP_1200():
     subject_list = []
 
     for idx, subject in enumerate(dir_list):
-        #bug in decoding? 999th Patient (825048) has date/time returned instead of patient_id
+        #bug in decoding? 1000th  aws call has date/time returned instead of patient_id
         if idx == 999:
-            subject_list.append("825048")
+            #print(f'aws returns junk on 1000th call')
             continue
         subject_id = subject.split()[1] #remove extranous stuff
         subject_id = subject_id[:-1] #remove trailing '/'
@@ -126,10 +124,12 @@ def subject_list_HCP_1200():
 
     return subject_list
 
+
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.savemat.html
 def save_subject_list_to_mat():
     subject_list = subject_list_HCP_1200()
-    savemat("Allprocessedid.mat", {'subjList': subject_list})
+    print(f'Saving subject list of {len(subject_list)} hcp subject')
+    savemat("hcp_1200_subject_list.mat", {'hcp1200_subject_list': subject_list})
 
 
 
@@ -211,13 +211,17 @@ def download_files():
     print(f"BOTH: \n{both_msmall_miss}")
 
     print(f"\nNO MSMALL")
-    print(f"LR: same as msmall lr? {lr_msmall==lr_no_small} \n{lr_msmall_miss}")
-    print(f"RL: same as msmall rl? {rl_msmall==rl_no_small} \n{rl_no_msmall_miss}")
+    print(f"LR: same as msmall lr? {lr_msmall_miss==lr_no_msmall_miss} \n{lr_no_msmall_miss}")
+    print(f"RL: same as msmall rl? {rl_msmall_miss==rl_no_msmall_miss} \n{rl_no_msmall_miss}")
     print(f"BOTH: same as msmall both? {both_msmall_miss==both_no_msmall_miss} \n{both_no_msmall_miss}")
 
     print(f"\nDESIKAN missing: {patients_missing_file['Desikan_aparc32k']}")
     print(f"DESTRIE missing: {patients_missing_file['Destrieux_aparc32k']}")
 
+    lr_no_msmall_miss = [int(a) for a in lr_no_msmall_miss]
+    rl_no_msmall_miss = [int(a) for a in rl_no_msmall_miss]
+    both_no_msmall_miss = [int(a) for a in both_no_msmall_miss]
+    savemat("subjects_missing_data.mat", {'missing_LR': lr_no_msmall_miss, 'missing_RL': rl_no_msmall_miss, 'missing_LR_and_RL': both_no_msmall_miss, 'type': 'no_msmall'})
 
 #Begin download
 download_files()
