@@ -14,7 +14,7 @@ from scipy.io import savemat
 encoding = 'utf-8'
 
 ############
-#relative file path for each patient: CHANGE
+#relative file path for each patient:
 lr_msmall = "rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii"
 rl_msmall = "rfMRI_REST1_RL_Atlas_MSMAll_hp2000_clean.dtseries.nii"
 
@@ -30,6 +30,7 @@ rl_no_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_RL/" + rl_no_msma
 #"HCP_1200/996782/MNINonLinear/Results/rfMRI_REST1_RL/rfMRI_REST1_RL_Atlas_hp2000_clean.dtseries.nii"
 
 
+#LR stands for Left and Right hemisphere not Left to Right scanning (as in the dtseries.nii)
 atlas_file_pre  = "/MNINonLinear/fsaverage_LR32k/"
 destrieux_atlas_file_post = ".aparc.a2009s.32k_fs_LR.dlabel.nii"
 desikan_atlas_file_post = ".aparc.32k_fs_LR.dlabel.nii"
@@ -132,6 +133,27 @@ def save_subject_list_to_mat():
     savemat("hcp_1200_subject_list.mat", {'hcp1200_subject_list': subject_list})
 
 
+#Check to see if this file exists on hcp server
+def check_exist_hcp(rel_subj_path, patient_id):
+
+    hcp_path = path2HCP_1200 + patient_id + rel_subj_path
+    print(f'contructed path: {hcp_path}')
+    print(f'\tChecking if  {rel_subj_path} exists ...',end='')
+    args = ["aws s3 ls s3:/" + hcp_path + " " + "--human-readable"]
+    completed_process = subprocess.run(args, capture_output=True, shell=True)
+    out = completed_process.stdout.decode(encoding)
+
+    #if download did not complete properly, print this and save this info
+    if completed_process.returncode != 0:
+        print(f'NOT EXIST...\n\t\t>> {out} ')#'ERROR (likely not on server or faulty path given')
+    else:
+        print(f'DOES EXIST...\n\t\t>> {out}')
+
+patient_id = "644044"
+desikan_atlas_file_post_RL = ".aparc.32k_fs_RL.dlabel.nii"
+rel_hcp_path = atlas_file_pre + patient_id + desikan_atlas_file_post_RL
+check_exist_hcp(rel_hcp_path, patient_id)
+
 
 #for each patient, create a local diretory in local_dir and download all files. If there is an issue downloading, print to terminal and record which patient could not download each file
 def download_files():
@@ -221,10 +243,10 @@ def download_files():
     lr_no_msmall_miss = [int(a) for a in lr_no_msmall_miss]
     rl_no_msmall_miss = [int(a) for a in rl_no_msmall_miss]
     both_no_msmall_miss = [int(a) for a in both_no_msmall_miss]
-    savemat("subjects_missing_data.mat", {'missing_LR': lr_no_msmall_miss, 'missing_RL': rl_no_msmall_miss, 'missing_LR_and_RL': both_no_msmall_miss, 'type': 'no_msmall'})
+    #savemat("subjects_missing_data.mat", {'missing_LR': lr_no_msmall_miss, 'missing_RL': rl_no_msmall_miss, 'missing_LR_and_RL': both_no_msmall_miss, 'type': 'no_msmall'})
 
 #Begin download
-download_files()
+#download_files()
 
 #save_subject_list_to_mat()
 
