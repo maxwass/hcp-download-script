@@ -13,19 +13,21 @@ from scipy.io import savemat
 
 encoding = 'utf-8'
 
+r_num = '2'
+
 ############
 #relative file path for each patient:
-lr_msmall = "rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii"
-rl_msmall = "rfMRI_REST1_RL_Atlas_MSMAll_hp2000_clean.dtseries.nii"
+lr_msmall = f"rfMRI_REST{r_num}_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii"
+rl_msmall = f"rfMRI_REST{r_num}_RL_Atlas_MSMAll_hp2000_clean.dtseries.nii"
 
-lr_no_msmall = "rfMRI_REST1_LR_Atlas_hp2000_clean.dtseries.nii"
-rl_no_msmall = "rfMRI_REST1_RL_Atlas_hp2000_clean.dtseries.nii"
+lr_no_msmall = f"rfMRI_REST{r_num}_LR_Atlas_hp2000_clean.dtseries.nii"
+rl_no_msmall = f"rfMRI_REST{r_num}_RL_Atlas_hp2000_clean.dtseries.nii"
 
-lr_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_LR/" + lr_msmall
-rl_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_RL/" + rl_msmall
+lr_msmall_hcp_rel_path = f"/MNINonLinear/Results/rfMRI_REST{r_num}_LR/" + lr_msmall
+rl_msmall_hcp_rel_path = f"/MNINonLinear/Results/rfMRI_REST{r_num}_RL/" + rl_msmall
 
-lr_no_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_LR/" + lr_no_msmall
-rl_no_msmall_hcp_rel_path = "/MNINonLinear/Results/rfMRI_REST1_RL/" + rl_no_msmall
+lr_no_msmall_hcp_rel_path = f"/MNINonLinear/Results/rfMRI_REST{r_num}_LR/" + lr_no_msmall
+rl_no_msmall_hcp_rel_path = f"/MNINonLinear/Results/rfMRI_REST{r_num}_RL/" + rl_no_msmall
 
 #"HCP_1200/996782/MNINonLinear/Results/rfMRI_REST1_RL/rfMRI_REST1_RL_Atlas_hp2000_clean.dtseries.nii"
 
@@ -39,7 +41,7 @@ desikan_atlas_file_post = ".aparc.32k_fs_LR.dlabel.nii"
 path2HCP_1200 = "/hcp-openaccess/HCP_1200/"
 
 #paths on local machine
-external_hd_path = "/Volumes/Elements" #"/run/media/mwasser6/Elements"
+external_hd_path =  "/run/media/mwasser6/Elements" #"/Volumes/Elements"
 log_file  = external_hd_path + "/download_scripts/log.txt"
 local_dir = external_hd_path + "/brain_data"
 
@@ -98,7 +100,7 @@ def list_files(patient_id):
     readable_name = "Destrieux_aparc32k"
     local_path = subject_dir + "/" + patient_id + destrieux_atlas_file_post
     files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
-
+    
     #Desikan atlas
     hcp_path = path2HCP_1200 + patient_id + atlas_file_pre + patient_id + desikan_atlas_file_post
     readable_name = "Desikan_aparc32k"
@@ -106,6 +108,7 @@ def list_files(patient_id):
     files.append({"hcp_path": hcp_path, "readable_name": readable_name, "local_path": local_path})
 
     return files
+
 #create list of string subject id's in HCP_1200. There are 1114 directories (each representing a patient)
 def subject_list_HCP_1200():
     args = ["aws s3 ls s3://hcp-openaccess/HCP_1200/"]
@@ -138,22 +141,23 @@ def check_exist_hcp(rel_subj_path, patient_id):
 
     hcp_path = path2HCP_1200 + patient_id + rel_subj_path
     print(f'contructed path: {hcp_path}')
-    print(f'\tChecking if  {rel_subj_path} exists ...',end='')
+    print(f'\tExist? -> {rel_subj_path} || ',end='')
     args = ["aws s3 ls s3:/" + hcp_path + " " + "--human-readable"]
     completed_process = subprocess.run(args, capture_output=True, shell=True)
     out = completed_process.stdout.decode(encoding)
 
     #if download did not complete properly, print this and save this info
     if completed_process.returncode != 0:
-        print(f'NOT EXIST...\n\t\t>> {out} ')#'ERROR (likely not on server or faulty path given')
+        print(f'NO...\n\t{out} ')#'ERROR (likely not on server or faulty path given')
     else:
-        print(f'DOES EXIST...\n\t\t>> {out}')
-
-patient_id = "644044"
-desikan_atlas_file_post_RL = ".aparc.32k_fs_RL.dlabel.nii"
-rel_hcp_path = atlas_file_pre + patient_id + desikan_atlas_file_post_RL
-check_exist_hcp(rel_hcp_path, patient_id)
-
+        print(f'YES...\n\t{out}')
+"""
+patient_id = "100307"
+#desikan_atlas_file_post_RL = ".aparc.32k_fs_LR.dlabel.nii"
+#rel_hcp_path = atlas_file_pre + patient_id + desikan_atlas_file_post_RL
+check_exist_hcp(rl_no_msmall_hcp_rel_path, patient_id)
+check_exist_hcp(lr_no_msmall_hcp_rel_path, patient_id)
+"""
 
 #for each patient, create a local diretory in local_dir and download all files. If there is an issue downloading, print to terminal and record which patient could not download each file
 def download_files():
@@ -215,7 +219,7 @@ def download_files():
     both_msmall_miss = lr_msmall_miss.intersection(rl_msmall_miss)
     lr_len, rl_len, both_len= len(lr_msmall_miss), len(rl_msmall_miss), len(both_msmall_miss)
     print(f"MSMALL missing:    lr {lr_len} | rl {rl_len} | both {both_len}")
-
+    
     lr_no_msmall_miss = patients_missing_file["LR_no_msmall"]
     rl_no_msmall_miss = patients_missing_file["RL_no_msmall"]
     both_no_msmall_miss = lr_no_msmall_miss.intersection(rl_no_msmall_miss)
@@ -246,7 +250,7 @@ def download_files():
     #savemat("subjects_missing_data.mat", {'missing_LR': lr_no_msmall_miss, 'missing_RL': rl_no_msmall_miss, 'missing_LR_and_RL': both_no_msmall_miss, 'type': 'no_msmall'})
 
 #Begin download
-#download_files()
+download_files()
 
 #save_subject_list_to_mat()
 
